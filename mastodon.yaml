@@ -1,0 +1,227 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mastodon-config
+data:
+  # Service dependencies
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  DB_HOST: "127.0.0.1"
+  # DB_USER: postgres
+  DB_NAME: mastodon
+  # DB_PASS:
+  DB_PORT: "5432"
+
+  # Federation
+  # LOCAL_DOMAIN:
+  LOCAL_HTTPS: "true"
+
+  # Application secrets
+  # Generate each with the `rake secret` task (`docker-compose run --rm web rake secret` if you use docker compose)
+  # PAPERCLIP_SECRET:
+  # SECRET_KEY_BASE:
+  # OTP_SECRET:
+
+  # Registrations
+  # Single user mode will disable registrations and redirect frontpage to the first profile
+  # SINGLE_USER_MODE=true
+  # Prevent registrations with following e-mail domains
+  # EMAIL_DOMAIN_BLACKLIST=example1.com|example2.de|etc
+  # Only allow registrations with the following e-mail domains
+  # EMAIL_DOMAIN_WHITELIST=example1.com|example2.de|etc
+
+  # Optionally change default language
+  # DEFAULT_LOCALE: de
+
+  # E-mail configuration
+  # Note: Mailgun and SparkPost (https://sparkpo.st/smtp) each have good free tiers
+  # SMTP_SERVER=smtp.example.com
+  # SMTP_PORT: "587"
+  # SMTP_LOGIN=user
+  # SMTP_PASSWORD=
+  # SMTP_FROM_ADDRESS=user@example.com
+  # SMTP_DOMAIN=example.com
+  # SMTP_AUTH_METHOD: plain
+  # SMTP_OPENSSL_VERIFY_MODE: peer
+  # SMTP_ENABLE_STARTTLS_AUTO: "true"
+
+  # Optional asset host for multi-server setups
+  # CDN_HOST=assets.example.com
+
+  # S3 (optional)
+  # S3_ENABLED=true
+  # S3_BUCKET=
+  # AWS_ACCESS_KEY_ID=
+  # AWS_SECRET_ACCESS_KEY=
+  # S3_REGION=
+  # S3_PROTOCOL=http
+  # S3_HOSTNAME=192.168.1.123:9000
+
+  # S3 (Minio Config (optional) Please check Minio instance for details)
+  # S3_ENABLED=true
+  # S3_BUCKET=
+  # AWS_ACCESS_KEY_ID=
+  # AWS_SECRET_ACCESS_KEY=
+  # S3_REGION=
+  # S3_PROTOCOL=https
+  # S3_HOSTNAME=
+  # S3_ENDPOINT=
+
+  # Optional alias for S3 if you want to use Cloudfront or Cloudflare in front
+  # S3_CLOUDFRONT_HOST=
+
+  # Streaming API integration
+  # STREAMING_API_BASE_URL=
+
+  # Advanced settings
+  # If you need to use pgBouncer, you need to disable prepared statements:
+  # PREPARED_STATEMENTS=false
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mastodon-system-volume
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: mastodon
+spec:
+  ports:
+  - name: web
+    port: 3000
+    targetPort: web
+  - name: streaming
+    port: 4000
+    targetPort: streaming
+  selector:
+    name: mastodon
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mastodon
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: mastodon
+    spec:
+      containers:
+      - image: gargron/mastodon
+        name: web
+        command: ["ash", "-c", "rails assets:precompile && bundle exec rails s -p 3000 -b 0.0.0.0"]
+        ports:
+        - containerPort: 3000
+          name: web
+        volumeMounts:
+        - name: mastodon-system
+          mountPath: /mastodon/public/system
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: cloudsql-db-credentials
+              key: username
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: cloudsql-db-credentials
+              key: password
+        envFrom:
+        - configMapRef:
+            name: mastodon-config
+        - secretRef:
+            name: mastodon-secrets
+
+      - image: gargron/mastodon
+        name: streaming
+        command: ["npm", "run", "start"]
+        ports:
+        - containerPort: 4000
+          name: streaming
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: cloudsql-db-credentials
+              key: username
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: cloudsql-db-credentials
+              key: password
+        envFrom:
+        - configMapRef:
+            name: mastodon-config
+        - secretRef:
+            name: mastodon-secrets
+
+      - image: gargron/mastodon
+        name: sidekiq
+        command: ["bundle", "exec", "sidekiq", "-q", "default", "-q", "mailers", "-q", "pull", "-q", "push"]
+        volumeMounts:
+        - name: mastodon-system
+          mountPath: /mastodon/public/system
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: cloudsql-db-credentials
+              key: username
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: cloudsql-db-credentials
+              key: password
+        envFrom:
+        - configMapRef:
+            name: mastodon-config
+        - secretRef:
+            name: mastodon-secrets
+
+      - image: gcr.io/cloudsql-docker/gce-proxy:1.09
+        name: cloudsql-proxy
+        command: ["/cloud_sql_proxy", "--dir=/cloudsql",
+                  "-instances=$(INSTANCE_CONNECTION_NAME)=tcp:5432",
+                  "-credential_file=/secrets/cloudsql/credentials.json"]
+        env:
+        - name: INSTANCE_CONNECTION_NAME
+          valueFrom:
+            secretKeyRef:
+              name: cloudsql-db-credentials
+              key: instance_connection_name
+        volumeMounts:
+        - name: cloudsql-instance-credentials
+          mountPath: /secrets/cloudsql
+          readOnly: true
+        - name: ssl-certs
+          mountPath: /etc/ssl/certs
+        - name: cloudsql
+          mountPath: /cloudsql
+
+      volumes:
+      - name: cloudsql-instance-credentials
+        secret:
+          secretName: cloudsql-instance-credentials
+      - name: ssl-certs
+        hostPath:
+          path: /etc/ssl/certs
+      - name: cloudsql
+        emptyDir:
+      - name: mastodon-system
+        persistentVolumeClaim:
+          claimName: mastodon-system-volume
