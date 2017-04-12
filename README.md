@@ -1,6 +1,6 @@
 # Kubedon
 
-A Mastodon conf for Kubernetes / Google Container Engine.
+A [Mastodon](https://github.com/tootsuite/mastodon) conf for Kubernetes / Google Container Engine.
 
 ## Prerequisite: Generating Secrets
 
