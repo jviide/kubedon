@@ -11,6 +11,20 @@ spec:
 
 ---
 
+kind: Service
+apiVersion: v1
+metadata:
+  name: redis
+spec:
+  type: ClusterIP
+  selector:
+    name: redis
+  ports:
+  - port: 6379
+    targetPort: redis
+
+---
+
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -23,8 +37,8 @@ spec:
         name: redis
     spec:
       containers:
-      - image: redis:alpine
-        name: redis
+      - name: redis
+        image: redis:alpine
         ports:
         - containerPort: 6379
           name: redis
@@ -35,16 +49,3 @@ spec:
       - name: redis-data
         persistentVolumeClaim:
           claimName: redis-volume
-
----
-
-kind: Service
-apiVersion: v1
-metadata:
-  name: redis
-spec:
-  ports:
-  - port: 6379
-    targetPort: redis
-  selector:
-    name: redis

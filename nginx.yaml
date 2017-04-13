@@ -133,12 +133,12 @@ spec:
       containers:
       - image: nginx:alpine
         name: nginx
-        command: ["ash", "-c", "envsubst '${LOCAL_DOMAIN}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+        command: ["/bin/ash", "-c", "envsubst '${LOCAL_DOMAIN}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
         ports:
-        - containerPort: 80
-          name: http
-        - containerPort: 443
-          name: https
+        - name: http
+          containerPort: 80
+        - name: https
+          containerPort: 443
         volumeMounts:
         - name: nginx-conf
           mountPath: /etc/nginx/templates

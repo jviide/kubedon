@@ -6,7 +6,7 @@ data:
   # Service dependencies
   REDIS_HOST: redis
   REDIS_PORT: "6379"
-  DB_HOST: "127.0.0.1"
+  DB_HOST: cloudsql
   # DB_USER: postgres
   DB_NAME: mastodon
   # DB_PASS:
@@ -121,107 +121,43 @@ spec:
         name: mastodon
     spec:
       containers:
-      - image: gargron/mastodon
+      - image: gargron/mastodon:v1.1.1
         name: web
-        command: ["ash", "-c", "rails assets:precompile && bundle exec rails s -p 3000 -b 0.0.0.0"]
+        command: ["/bin/ash", "-c", "rails assets:precompile && bundle exec rails s -p 3000 -b 0.0.0.0"]
         ports:
-        - containerPort: 3000
-          name: web
+        - name: web
+          containerPort: 3000
         volumeMounts:
         - name: mastodon-system
           mountPath: /mastodon/public/system
-        env:
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: cloudsql-db-credentials
-              key: username
-        - name: DB_PASS
-          valueFrom:
-            secretKeyRef:
-              name: cloudsql-db-credentials
-              key: password
         envFrom:
         - configMapRef:
             name: mastodon-config
         - secretRef:
             name: mastodon-secrets
-
-      - image: gargron/mastodon
-        name: streaming
+      - name: streaming
+        image: gargron/mastodon:v1.1.1
         command: ["npm", "run", "start"]
         ports:
-        - containerPort: 4000
-          name: streaming
-        env:
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: cloudsql-db-credentials
-              key: username
-        - name: DB_PASS
-          valueFrom:
-            secretKeyRef:
-              name: cloudsql-db-credentials
-              key: password
+        - name: streaming
+          containerPort: 4000
         envFrom:
         - configMapRef:
             name: mastodon-config
         - secretRef:
             name: mastodon-secrets
-
-      - image: gargron/mastodon
-        name: sidekiq
+      - name: sidekiq
+        image: gargron/mastodon:v1.1.1
         command: ["bundle", "exec", "sidekiq", "-q", "default", "-q", "mailers", "-q", "pull", "-q", "push"]
         volumeMounts:
         - name: mastodon-system
           mountPath: /mastodon/public/system
-        env:
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: cloudsql-db-credentials
-              key: username
-        - name: DB_PASS
-          valueFrom:
-            secretKeyRef:
-              name: cloudsql-db-credentials
-              key: password
         envFrom:
         - configMapRef:
             name: mastodon-config
         - secretRef:
             name: mastodon-secrets
-
-      - image: gcr.io/cloudsql-docker/gce-proxy:1.09
-        name: cloudsql-proxy
-        command: ["/cloud_sql_proxy", "--dir=/cloudsql",
-                  "-instances=$(INSTANCE_CONNECTION_NAME)=tcp:5432",
-                  "-credential_file=/secrets/cloudsql/credentials.json"]
-        env:
-        - name: INSTANCE_CONNECTION_NAME
-          valueFrom:
-            secretKeyRef:
-              name: cloudsql-db-credentials
-              key: instance_connection_name
-        volumeMounts:
-        - name: cloudsql-instance-credentials
-          mountPath: /secrets/cloudsql
-          readOnly: true
-        - name: ssl-certs
-          mountPath: /etc/ssl/certs
-        - name: cloudsql
-          mountPath: /cloudsql
-
       volumes:
-      - name: cloudsql-instance-credentials
-        secret:
-          secretName: cloudsql-instance-credentials
-      - name: ssl-certs
-        hostPath:
-          path: /etc/ssl/certs
-      - name: cloudsql
-        emptyDir:
       - name: mastodon-system
         persistentVolumeClaim:
           claimName: mastodon-system-volume
