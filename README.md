@@ -40,8 +40,8 @@ Generate Let's Encrypt Certs.
 
 ```sh
 $ kubectl create secret generic web-certificates \
-  --from-file=fullchain.pem=fullchain.pem \
-  --from-file=privkey.pem=privkey.pem
+  --from-file=fullchain.pem \
+  --from-file=privkey.pem
 ```
 
 ## Run migration
