@@ -24,58 +24,58 @@ data:
 
   # Registrations
   # Single user mode will disable registrations and redirect frontpage to the first profile
-  # SINGLE_USER_MODE=true
+  # SINGLE_USER_MODE: "true"
   # Prevent registrations with following e-mail domains
-  # EMAIL_DOMAIN_BLACKLIST=example1.com|example2.de|etc
+  # EMAIL_DOMAIN_BLACKLIST: "example1.com|example2.de|etc"
   # Only allow registrations with the following e-mail domains
-  # EMAIL_DOMAIN_WHITELIST=example1.com|example2.de|etc
+  # EMAIL_DOMAIN_WHITELIST: "example1.com|example2.de|etc"
 
   # Optionally change default language
   # DEFAULT_LOCALE: de
 
   # E-mail configuration
   # Note: Mailgun and SparkPost (https://sparkpo.st/smtp) each have good free tiers
-  # SMTP_SERVER=smtp.example.com
+  # SMTP_SERVER: smtp.example.com
   # SMTP_PORT: "587"
-  # SMTP_LOGIN=user
-  # SMTP_PASSWORD=
-  # SMTP_FROM_ADDRESS=user@example.com
-  # SMTP_DOMAIN=example.com
+  # SMTP_LOGIN: user
+  # SMTP_PASSWORD:
+  # SMTP_FROM_ADDRESS: user@example.com
+  # SMTP_DOMAIN: example.com
   # SMTP_AUTH_METHOD: plain
   # SMTP_OPENSSL_VERIFY_MODE: peer
   # SMTP_ENABLE_STARTTLS_AUTO: "true"
 
   # Optional asset host for multi-server setups
-  # CDN_HOST=assets.example.com
+  # CDN_HOST: assets.example.com
 
   # S3 (optional)
-  # S3_ENABLED=true
-  # S3_BUCKET=
-  # AWS_ACCESS_KEY_ID=
-  # AWS_SECRET_ACCESS_KEY=
-  # S3_REGION=
-  # S3_PROTOCOL=http
-  # S3_HOSTNAME=192.168.1.123:9000
+  # S3_ENABLED: "true"
+  # S3_BUCKET:
+  # AWS_ACCESS_KEY_ID:
+  # AWS_SECRET_ACCESS_KEY:
+  # S3_REGION:
+  # S3_PROTOCOL: http
+  # S3_HOSTNAME: 192.168.1.123:9000
 
   # S3 (Minio Config (optional) Please check Minio instance for details)
-  # S3_ENABLED=true
-  # S3_BUCKET=
-  # AWS_ACCESS_KEY_ID=
-  # AWS_SECRET_ACCESS_KEY=
-  # S3_REGION=
-  # S3_PROTOCOL=https
-  # S3_HOSTNAME=
-  # S3_ENDPOINT=
+  # S3_ENABLED: true
+  # S3_BUCKET:
+  # AWS_ACCESS_KEY_ID:
+  # AWS_SECRET_ACCESS_KEY:
+  # S3_REGION:
+  # S3_PROTOCOL: https
+  # S3_HOSTNAME:
+  # S3_ENDPOINT:
 
   # Optional alias for S3 if you want to use Cloudfront or Cloudflare in front
-  # S3_CLOUDFRONT_HOST=
+  # S3_CLOUDFRONT_HOST:
 
   # Streaming API integration
-  # STREAMING_API_BASE_URL=
+  # STREAMING_API_BASE_URL:
 
   # Advanced settings
   # If you need to use pgBouncer, you need to disable prepared statements:
-  # PREPARED_STATEMENTS=false
+  # PREPARED_STATEMENTS: "false"
 
 ---
 
