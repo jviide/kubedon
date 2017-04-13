@@ -35,15 +35,15 @@ data:
 
   # E-mail configuration
   # Note: Mailgun and SparkPost (https://sparkpo.st/smtp) each have good free tiers
-  # SMTP_SERVER: smtp.example.com
+  # SMTP_SERVER:
   # SMTP_PORT: "587"
-  # SMTP_LOGIN: user
+  # SMTP_LOGIN:
   # SMTP_PASSWORD:
-  # SMTP_FROM_ADDRESS: user@example.com
-  # SMTP_DOMAIN: example.com
-  # SMTP_AUTH_METHOD: plain
-  # SMTP_OPENSSL_VERIFY_MODE: peer
-  # SMTP_ENABLE_STARTTLS_AUTO: "true"
+  # SMTP_FROM_ADDRESS:
+  # SMTP_DOMAIN:
+  SMTP_AUTH_METHOD: plain
+  SMTP_OPENSSL_VERIFY_MODE: peer
+  SMTP_ENABLE_STARTTLS_AUTO: "true"
 
   # Optional asset host for multi-server setups
   # CDN_HOST: assets.example.com
@@ -121,8 +121,8 @@ spec:
         name: mastodon
     spec:
       containers:
-      - image: gargron/mastodon:v1.1.1
-        name: web
+      - name: web
+        image: gargron/mastodon:v1.1.2
         command: ["/bin/ash", "-c", "rails assets:precompile && bundle exec rails s -p 3000 -b 0.0.0.0"]
         ports:
         - name: web
@@ -136,7 +136,7 @@ spec:
         - secretRef:
             name: mastodon-secrets
       - name: streaming
-        image: gargron/mastodon:v1.1.1
+        image: gargron/mastodon:v1.1.2
         command: ["npm", "run", "start"]
         ports:
         - name: streaming
@@ -147,8 +147,8 @@ spec:
         - secretRef:
             name: mastodon-secrets
       - name: sidekiq
-        image: gargron/mastodon:v1.1.1
-        command: ["bundle", "exec", "sidekiq", "-q", "default", "-q", "mailers", "-q", "pull", "-q", "push"]
+        image: gargron/mastodon:v1.1.2
+        command: ["bundle", "exec", "sidekiq", "-q", "default", "-q", "pull", "-q", "push"]
         volumeMounts:
         - name: mastodon-system
           mountPath: /mastodon/public/system
@@ -161,3 +161,32 @@ spec:
       - name: mastodon-system
         persistentVolumeClaim:
           claimName: mastodon-system-volume
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sidekiq-mailer
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: sidekiq-mailer
+    spec:
+      containers:
+      - name: sidekiq-mailer
+        image: gargron/mastodon:v1.1.2
+        command: ["/bin/ash", "-c", "echo ${CAFILE_RB} > config/initializers/cafile.rb && bundle exec sidekiq -q mailers"]
+        env:
+        - name: CAFILE_RB
+          value: |
+            Rails.application.configure do
+              config.action_mailer.smtp_settings[:ca_file] = "/etc/ssl/certs/ca-certificates.crt"
+            end
+        envFrom:
+        - configMapRef:
+            name: mastodon-config
+        - secretRef:
+            name: mastodon-secrets
