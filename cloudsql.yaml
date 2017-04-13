@@ -37,10 +37,10 @@ spec:
         - name: INSTANCE_CONNECTION_NAME
           valueFrom:
             secretKeyRef:
-              name: cloudsql-instance-credentials
+              name: cloudsql-secrets
               key: instance_connection_name
         volumeMounts:
-        - name: cloudsql-instance-credentials
+        - name: cloudsql-secrets
           mountPath: /secrets/cloudsql
           readOnly: true
         - name: ssl-certs
@@ -48,9 +48,9 @@ spec:
         - name: cloudsql
           mountPath: /cloudsql
       volumes:
-      - name: cloudsql-instance-credentials
+      - name: cloudsql-secrets
         secret:
-          secretName: cloudsql-instance-credentials
+          secretName: cloudsql-secrets
           items:
           - key: credentials.json
             path: credentials.json
