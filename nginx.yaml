@@ -45,6 +45,8 @@ data:
       gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
       add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
+      add_header Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://${LOCAL_DOMAIN}; img-src 'self' https://storage.googleapis.com data:; media-src 'self' https://storage.googleapis.com; font-src 'self'";
+      add_header Referrer-Policy "no-referrer";
 
       location / {
         try_files $uri @proxy;
@@ -134,6 +136,13 @@ spec:
       - image: nginx:alpine
         name: nginx
         command: ["/bin/ash", "-c", "envsubst '${LOCAL_DOMAIN}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+        resources:
+          requests:
+            memory: 128Mi
+            cpu: 100m
+          limits:
+            memory: 256Mi
+            cpu: 100m
         ports:
         - name: http
           containerPort: 80
