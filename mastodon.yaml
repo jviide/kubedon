@@ -109,7 +109,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: gargron/mastodon:v1.2
+        image: gargron/mastodon:v1.2.2
         command: ["/bin/ash", "-c", "rails assets:precompile && bundle exec rails s -p 3000 -b 0.0.0.0"]
         ports:
         - name: web
@@ -120,19 +120,11 @@ spec:
         - secretRef:
             name: mastodon-secrets
       - name: streaming
-        image: gargron/mastodon:v1.2
+        image: gargron/mastodon:v1.2.2
         command: ["npm", "run", "start"]
         ports:
         - name: streaming
           containerPort: 4000
-        envFrom:
-        - configMapRef:
-            name: mastodon-config
-        - secretRef:
-            name: mastodon-secrets
-      - name: sidekiq
-        image: gargron/mastodon:v1.2
-        command: ["bundle", "exec", "sidekiq", "-q", "default", "-q", "pull", "-q", "push"]
         envFrom:
         - configMapRef:
             name: mastodon-config
@@ -144,18 +136,18 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: sidekiq-mailer
+  name: sidekiq
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        name: sidekiq-mailer
+        name: sidekiq
     spec:
       containers:
-      - name: sidekiq-mailer
-        image: gargron/mastodon:v1.2
-        command: ["/bin/ash", "-c", "echo \"${CAFILE_RB}\" > config/initializers/cafile.rb && bundle exec sidekiq -q mailers"]
+      - name: sidekiq
+        command: ["/bin/ash", "-c", "echo \"${CAFILE_RB}\" > config/initializers/cafile.rb && bundle exec sidekiq -q default -q mailers -q pull -q push"]
+        image: gargron/mastodon:v1.2.2
         resources:
           requests:
             memory: 128Mi
