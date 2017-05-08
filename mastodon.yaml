@@ -109,7 +109,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: gargron/mastodon:v1.3.2
+        image: gargron/mastodon:v1.3.3
         command: ["/bin/ash", "-c", "rails assets:precompile && bundle exec rails s -p 3000 -b 0.0.0.0"]
         ports:
         - name: web
@@ -120,7 +120,7 @@ spec:
         - secretRef:
             name: mastodon-secrets
       - name: streaming
-        image: gargron/mastodon:v1.3.2
+        image: gargron/mastodon:v1.3.3
         command: ["npm", "run", "start"]
         ports:
         - name: streaming
@@ -147,7 +147,7 @@ spec:
       containers:
       - name: sidekiq
         command: ["/bin/ash", "-c", "echo \"${CAFILE_RB}\" > config/initializers/cafile.rb && bundle exec sidekiq -q default -q mailers -q pull -q push"]
-        image: gargron/mastodon:v1.3.2
+        image: gargron/mastodon:v1.3.3
         resources:
           requests:
             memory: 128Mi
