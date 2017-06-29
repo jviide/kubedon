@@ -39,13 +39,11 @@ spec:
       containers:
       - name: redis
         image: redis:alpine
+        imagePullPolicy: Always
         resources:
           requests:
-            memory: 128Mi
-            cpu: 100m
-          limits:
-            memory: 256Mi
-            cpu: 100m
+            memory: 64Mi
+            cpu: 50m
         ports:
         - containerPort: 6379
           name: redis

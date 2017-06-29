@@ -128,15 +128,13 @@ spec:
           secretName: web-certificates
       containers:
       - image: nginx:alpine
+        imagePullPolicy: Always
         name: nginx
         command: ["/bin/ash", "-c", "envsubst '${LOCAL_DOMAIN}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
         resources:
           requests:
-            memory: 128Mi
-            cpu: 100m
-          limits:
-            memory: 256Mi
-            cpu: 100m
+            memory: 64Mi
+            cpu: 50m
         ports:
         - name: http
           containerPort: 80

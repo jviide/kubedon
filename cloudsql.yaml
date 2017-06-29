@@ -47,6 +47,10 @@ spec:
           mountPath: /etc/ssl/certs
         - name: cloudsql
           mountPath: /cloudsql
+        resources:
+          requests:
+            memory: 32Mi
+            cpu: 25m
       volumes:
       - name: cloudsql-secrets
         secret:

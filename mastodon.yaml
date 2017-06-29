@@ -1,84 +1,3 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: mastodon-config
-data:
-  # Service dependencies
-  REDIS_HOST: redis
-  REDIS_PORT: "6379"
-  DB_HOST: cloudsql
-  # DB_USER: postgres
-  DB_NAME: mastodon
-  # DB_PASS:
-  DB_PORT: "5432"
-
-  # Federation
-  # LOCAL_DOMAIN:
-  LOCAL_HTTPS: "true"
-
-  # Application secrets
-  # Generate each with the `rake secret` task (`docker-compose run --rm web rake secret` if you use docker compose)
-  # PAPERCLIP_SECRET:
-  # SECRET_KEY_BASE:
-  # OTP_SECRET:
-
-  # Registrations
-  # Single user mode will disable registrations and redirect frontpage to the first profile
-  # SINGLE_USER_MODE: "true"
-  # Prevent registrations with following e-mail domains
-  # EMAIL_DOMAIN_BLACKLIST: "example1.com|example2.de|etc"
-  # Only allow registrations with the following e-mail domains
-  # EMAIL_DOMAIN_WHITELIST: "example1.com|example2.de|etc"
-
-  # Optionally change default language
-  # DEFAULT_LOCALE: de
-
-  # E-mail configuration
-  # Note: Mailgun and SparkPost (https://sparkpo.st/smtp) each have good free tiers
-  # SMTP_SERVER:
-  # SMTP_PORT: "587"
-  # SMTP_LOGIN:
-  # SMTP_PASSWORD:
-  # SMTP_FROM_ADDRESS:
-  # SMTP_DOMAIN:
-  SMTP_AUTH_METHOD: plain
-  SMTP_OPENSSL_VERIFY_MODE: peer
-  SMTP_ENABLE_STARTTLS_AUTO: "true"
-
-  # Optional asset host for multi-server setups
-  # CDN_HOST: assets.example.com
-
-  # S3 (optional)
-  # S3_ENABLED: "true"
-  # S3_BUCKET:
-  # AWS_ACCESS_KEY_ID:
-  # AWS_SECRET_ACCESS_KEY:
-  # S3_REGION:
-  # S3_PROTOCOL: http
-  # S3_HOSTNAME: 192.168.1.123:9000
-
-  # S3 (Minio Config (optional) Please check Minio instance for details)
-  # S3_ENABLED: "true"
-  # S3_BUCKET:
-  # AWS_ACCESS_KEY_ID:
-  # AWS_SECRET_ACCESS_KEY:
-  # S3_REGION:
-  # S3_PROTOCOL: https
-  # S3_HOSTNAME: storage.googleapis.com
-  # S3_ENDPOINT: https://storage.googleapis.com
-
-  # Optional alias for S3 if you want to use Cloudfront or Cloudflare in front
-  # S3_CLOUDFRONT_HOST:
-
-  # Streaming API integration
-  # STREAMING_API_BASE_URL:
-
-  # Advanced settings
-  # If you need to use pgBouncer, you need to disable prepared statements:
-  # PREPARED_STATEMENTS: "false"
-
----
-
 kind: Service
 apiVersion: v1
 metadata:
@@ -109,7 +28,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: gargron/mastodon:v1.3.3
+        image: gargron/mastodon:v1.4.6
         command: ["/bin/ash", "-c", "rails assets:precompile && bundle exec rails s -p 3000 -b 0.0.0.0"]
         ports:
         - name: web
@@ -119,8 +38,12 @@ spec:
             name: mastodon-config
         - secretRef:
             name: mastodon-secrets
+        resources:
+          requests:
+            memory: 350Mi
+            cpu: 100m
       - name: streaming
-        image: gargron/mastodon:v1.3.3
+        image: gargron/mastodon:v1.4.6
         command: ["npm", "run", "start"]
         ports:
         - name: streaming
@@ -130,6 +53,10 @@ spec:
             name: mastodon-config
         - secretRef:
             name: mastodon-secrets
+        resources:
+          requests:
+            memory: 32Mi
+            cpu: 25m
 
 ---
 
@@ -147,14 +74,11 @@ spec:
       containers:
       - name: sidekiq
         command: ["/bin/ash", "-c", "echo \"${CAFILE_RB}\" > config/initializers/cafile.rb && bundle exec sidekiq -q default -q mailers -q pull -q push"]
-        image: gargron/mastodon:v1.3.3
+        image: gargron/mastodon:v1.4.6
         resources:
           requests:
             memory: 128Mi
             cpu: 50m
-          limits:
-            memory: 512Mi
-            cpu: 100m
         env:
         - name: CAFILE_RB
           value: |
